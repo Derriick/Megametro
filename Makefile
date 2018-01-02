@@ -1,26 +1,28 @@
 APP = megametro
-SRC = main.ml analyse.ml table.ml metro.ml
 
-OBJ = $(SRC:.ml=.cmo)
+ML = $(wildcard *.ml)
+MLI = $(wildcard *.mli)
+
+OBJ = $(ML:.ml=.cmo)
+INT = $(MLI:.mli=.cmi)
 
 CAMLC = ocamlc
-FLAGS = -c
 
-all: $(APP)
+all: $(INT) $(APP)
 
 %.cmi: %.mli
-	$(CAMLC) $(FLAGS) $<
+	$(CAMLC) -c $<
 
-%.cmo: %.ml %.cmi
-	$(CAMLC) $(FLAGS) $<
+%.cmo: %.ml
+	$(CAMLC) -c $<
 
 main.cmo: main.ml 
-	$(CAMLC) $(FLAGS) $<
+	$(CAMLC) -c $<
 
 $(APP): $(OBJ)
 	$(CAMLC) -o $(APP) $^
 
 clean:
-	rm -rf $(APP) *.cm[io] *.out 2>/dev/null
+	rm -rf $(APP) *.cm[iox] *o *.out 2>/dev/null
 
 -include .depend

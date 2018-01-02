@@ -45,3 +45,14 @@ let rec list_to_table_aux l acc =
 
 let list_to_table l =
 	list_to_table_aux l MS.empty
+
+(* vérfier si le temps d'un chemin est déjà supérieur au minimum trouvé *)
+let rec minimal_time_aux s2 s1_succs time list_s =
+	(-1, [""]) (* A FAIRE !!!!!!!!!!!!! *)
+
+let minimal_time s1 s2 t =
+	let s1_succs =
+		try succs s1 t with
+			Not_found -> MS.empty
+	in
+	minimal_time_aux s2 s1_succs (-1) []

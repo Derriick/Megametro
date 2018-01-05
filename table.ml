@@ -30,7 +30,7 @@ let rec remove_station_aux s1 t l =
 		in
 		let s2_succs_without_s1 = MS.remove s1 s2_succs in
 		let t' =
-			if (MS.is_empty s2_succs_without_s1) then
+			if (is_empty s2_succs_without_s1) then
 				MS.remove s2 t	(* si s2 est vide, c'est qu'il n'y avait qu'un chemin entre s1 et s2 *)
 			else
 				MS.add s2 s2_succs_without_s1 t
@@ -71,33 +71,28 @@ let rec list_to_table_aux l acc =
 let list_to_table l =
 	list_to_table_aux l MS.empty
 
-
-(* let fold_node f g v0 =
-	NodeMap.fold (
-		fun n n_succs acc ->
-			f n ac
-		) g v0
-*)
-
-let fold_s f t v0 =
-	MS.fold (
-		fun s s_succs acc ->
-			f s acc
-		) t v0
-
-let next_s s_succs =
-	if (MS.is_empty s_succs) then
-		raise All_done
+let rec print_succs s_succs =
+	if (is_empty s_succs) then
+		()
 	else
-		MS.choose s_succs
+		let (s, d) = MS.choose s_succs in
+		let _ = Printf.printf "\t%s : %d\n" s d in
+		let s_succs' = MS.remove s s_succs in
+		print_succs s_succs'
 
-let s_succs s t =
-	try succs s t with
-		Not_found -> MS.empty
+let rec print_table t =
+	if (is_empty t) then
+		()
+	else
+		let (s, s_succs) = MS.choose t in
+		let _ = Printf.printf "%s ->\n" s in
+		let _ = print_succs s_succs in
+		let t' = MS.remove s t in
+		print_table t'
 	
 let rec best_way_aux s sf t time t_min l =
 	let rec best_way_succs s_succs sf t time t_min l =
-		if (MS.is_empty s_succs) then
+		if (is_empty s_succs) then
 			raise All_done
 		else
 			let (s, d) = MS.choose s_succs in
@@ -110,18 +105,19 @@ let rec best_way_aux s sf t time t_min l =
 				try best_way_aux s sf t (time + d) t_min (s::l) with
 					No_way -> (-1, [])
 			in
-			if (time1 = -1 && time2 = -1) then
-				(-1, [])
-			else if (time1 = -1) then
+			if (time1 = -1) then
 				(time2, l2)
-			else if (time2 = -1 || (time1 < time2)) then
+			else if (time2 = -1 || time1 < time2) then
 				(time1, l1)
 			else
 				(time2, l2)
 	in
 	if (time > t_min && t_min <> -1) then
-		(-1, l) (* le temps déjà accumulé était plus grand que le minimum trouvé *)
+		(* le temps déjà accumulé était plus grand que le minimum trouvé *)
+		(-1, [])
 	else if (s = sf) then
+		(* la station atteinte est la station finale *)
+		(* le temps pour l'atteindre time devient le temps minimal t_min *)
 		(time, l)
 	else
 		let s_succs = (* on regarde dans tous les successeurs de s *)
@@ -136,21 +132,5 @@ let best_way si sf t =
 	let (time, l) = best_way_aux si sf t 0 (-1) [si] in
 	(time, List.rev l)
 
-let rec print_succs s_succs =
-	if (MS.is_empty s_succs) then
-		()
-	else
-		let (s, d) = MS.choose s_succs in
-		let _ = Printf.printf "\t%s -> %d\n" s d in
-		let s_succs' = MS.remove s s_succs in
-		print_succs s_succs'
-
-let rec print_table t =
-	if (MS.is_empty t) then
-		()
-	else
-		let (s, s_succs) = MS.choose t in
-		let _ = Printf.printf "%s:" s in
-		let _ = print_succs s_succs in
-		let t' = MS.remove s t in
-		print_table t'
+let best_comb_path path_list t =
+	assert false

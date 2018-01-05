@@ -28,4 +28,14 @@ val analyse_file_2 : string -> (string * string * int) list * string list list
 Chaque [sol_i] est de la forme (path,times) où path est le chemin demandé et times est la liste des temps de départ des différents module*)
 val output_sol_2 :  (string list*int list) list -> unit
 
+(* 
+[analyse_file_3 file] ouvre le fichier [file] et retourne la liste des transitions et la liste des points de départ et d'arrivée de chacun.
+
+Lève l'exception : 
+ - Sys_error msg si le fichier n'est pas accessible
+ - Scanf.Scan_failure msg si le fichier n'est pas au bon format
+*) 
+
+val analyse_file_3 : string -> (string * string * int) list * (string *string) list
+
                                            

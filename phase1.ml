@@ -6,7 +6,6 @@ let _ =
 		let filename = Sys.argv.(1) in
 		let (l, (si, sf)) = analyse_file_1 filename in
 		let t = list_to_table l in
-		let _ = print_table t in
 		let (time, list_s) = best_way si sf t in
 		if (time = -1) then
 			Printf.printf "No way from %s to %s\n" si sf

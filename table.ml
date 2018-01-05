@@ -1,4 +1,5 @@
 type way = string * string * int
+type path = string list
 
 module MS = Map.Make(String)
 type table = int MS.t MS.t
@@ -18,7 +19,7 @@ let add_station s t =
 	if is_present s t then
 		t
 	else
-		MS.add s MS.empty t
+		MS.add s empty t
 
 let rec remove_station_aux s1 t l =
 	match l with
@@ -26,7 +27,7 @@ let rec remove_station_aux s1 t l =
 	| (s2, _)::l' ->
 		let s2_succs =
 			try succs s2 t with
-				Not_found -> MS.empty
+				Not_found -> empty
 		in
 		let s2_succs_without_s1 = MS.remove s1 s2_succs in
 		let t' =
@@ -51,7 +52,7 @@ let add_way_aux s1 s2 d t =
 	in
 	let s1_succs =
 		try succs s1 t with
-			Not_found -> MS.empty
+			Not_found -> empty
 	in
 	let s1_succs_with_s2 = MS.add s2 d s1_succs in
 	MS.add s1 s1_succs_with_s2 t
@@ -69,7 +70,18 @@ let rec list_to_table_aux l acc =
 		list_to_table_aux l' t
 
 let list_to_table l =
-	list_to_table_aux l MS.empty
+	list_to_table_aux l empty
+
+let get_time s2 s1_succs =
+	try MS.find s2 s1_succs with
+		Not_found -> -1
+
+let get_way_time s1 s2 t =
+	let s1_succs =
+		try succs s1 t with
+			Not_found -> empty
+	in
+	get_time s2 s1_succs
 
 let rec print_succs s_succs =
 	if (is_empty s_succs) then
@@ -90,47 +102,46 @@ let rec print_table t =
 		let t' = MS.remove s t in
 		print_table t'
 	
-let rec best_way_aux s sf t time t_min l =
-	let rec best_way_succs s_succs sf t time t_min l =
+let rec best_path_aux s sf t time t_min path_rev =
+	let rec best_path_succs s_succs sf t time t_min path_rev =
 		if (is_empty s_succs) then
 			raise All_done
 		else
 			let (s, d) = MS.choose s_succs in
 			let s_succs' = MS.remove s s_succs in
-			let (time1, l1) =
-				try best_way_succs s_succs' sf t time t_min l with
-					All_done -> (-1, [])
+			let (path_rev1, time1) =
+				try best_path_succs s_succs' sf t time t_min path_rev with
+					All_done -> ([], -1)
 			in
-			let (time2, l2) =
-				try best_way_aux s sf t (time + d) t_min (s::l) with
-					No_way -> (-1, [])
+			let (path_rev2, time2) =
+				try best_path_aux s sf t (time + d) t_min (s::path_rev) with
+					No_way -> ([], -1)
 			in
 			if (time1 = -1) then
-				(time2, l2)
+				(path_rev2, time2)
 			else if (time2 = -1 || time1 < time2) then
-				(time1, l1)
+				(path_rev1, time1)
 			else
-				(time2, l2)
+				(path_rev2, time2)
 	in
 	if (time > t_min && t_min <> -1) then
 		(* le temps déjà accumulé était plus grand que le minimum trouvé *)
-		(-1, [])
+		([], -1)
 	else if (s = sf) then
 		(* la station atteinte est la station finale *)
 		(* le temps pour l'atteindre time devient le temps minimal t_min *)
-		(time, l)
+		(path_rev, time)
 	else
 		let s_succs = (* on regarde dans tous les successeurs de s *)
 			try succs s t with
 				Not_found -> raise No_way
 		in
 		let t' = remove_station s t in (* pour ne pas repasser par s *)
-		let (time', l') = best_way_succs s_succs sf t' time t_min l in
-		(time', l')
+		best_path_succs s_succs sf t' time t_min path_rev
 
-let best_way si sf t =
-	let (time, l) = best_way_aux si sf t 0 (-1) [si] in
-	(time, List.rev l)
+let best_path si sf t =
+	let (path_rev, time) = best_path_aux si sf t 0 (-1) [si] in
+	(List.rev path_rev, time)
 
 let best_comb_path path_list t =
 	assert false

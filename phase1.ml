@@ -6,11 +6,12 @@ let _ =
 		let filename = Sys.argv.(1) in
 		let (l, (si, sf)) = analyse_file_1 filename in
 		let t = list_to_table l in
-		let (time, list_s) = best_way si sf t in
+		let _ = print_table t in
+		let (path, time) = best_path si sf t in
 		if (time = -1) then
 			Printf.printf "No way from %s to %s\n" si sf
-			(* output_sol_1 0 [""] *)
+			(* output_sol_1 max_int [""] *)
 		else
-			output_sol_1 time list_s
+			output_sol_1 time path
 	else
 		Printf.printf "usage: %s filename\n" Sys.argv.(0)

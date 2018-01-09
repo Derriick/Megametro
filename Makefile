@@ -1,17 +1,14 @@
 APP1 = phase1
 APP2 = phase2
 APP3 = phase3
-SRC = analyse.ml table.ml
-
-# ML = $(wildcard *.ml)
-# MLI = $(wildcard *.mli)
-
-# OBJ = $(ML:.ml=.cmo)
-# INT = $(MLI:.mli=.cmi)
-OBJ = $(SRC:.ml=.cmo)
-INT = $(SRC:.ml=.cmi)
 
 CAMLC = ocamlc
+.PRECIOUS: %.cmi %.cmo
+
+# SRC = analyse.ml table.ml
+SRC = $(wildcard *.mli)
+INT = $(SRC:.mli=.cmi)
+OBJ = $(SRC:.mli=.cmo)
 
 all: $(APP1) $(APP2) $(APP3)
 
@@ -21,27 +18,8 @@ all: $(APP1) $(APP2) $(APP3)
 %.cmo: %.ml $(INT)
 	$(CAMLC) -c $<
 
-# %: $(OBJ) %.cmo
-# 	$(CAMLC) -o $@ $^
-
-$(APP1).cmo: $(APP1).ml $(INT)
-	$(CAMLC) -c $<
-
-$(APP2).cmo: $(APP2).ml $(INT)
-	$(CAMLC) -c $<
-
-$(APP3).cmo: $(APP3).ml $(INT)
-	$(CAMLC) -c $<
-
-$(APP1): $(OBJ) $(APP1).cmo
+%: $(OBJ) %.cmo
 	$(CAMLC) -o $@ $^
-
-$(APP2): $(OBJ) $(APP2).cmo
-	$(CAMLC) -o $@ $^
-
-$(APP3): $(OBJ) $(APP3).cmo
-	$(CAMLC) -o $@ $^
-
 
 clean:
-	rm -rf $(APP1) $(APP2) $(APP3) *.cm[iox] *o *.out 2>/dev/null
+	rm -rf $(APP1) $(APP2) $(APP3) *.cm[io] 2>/dev/null

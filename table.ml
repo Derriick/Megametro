@@ -83,39 +83,38 @@ let get_way_time s1 s2 t =
 	in
 	get_time s2 s1_succs
 
-let rec print_succs s_succs =
-	if (is_empty s_succs) then
-		()
-	else
-		let (s, d) = MS.choose s_succs in
-		let _ = Printf.printf "\t%s : %d\n" s d in
-		let s_succs' = MS.remove s s_succs in
-		print_succs s_succs'
+let rec print_succs l_succs =
+	match l_succs with
+	| [] -> ()
+	| (s, time)::l_succs' ->
+		let _ = Printf.printf "  \\__ %s : %d\n" s time in
+		print_succs l_succs'
+
+let rec print_table_aux l =
+	match l with
+	| [] -> ()
+	| (s, s_succs)::l' ->
+		let l_succs = MS.bindings s_succs in
+		let _ = Printf.printf "%s\n" s in
+		let _ = print_succs l_succs in
+		print_table_aux l'
 
 let rec print_table t =
-	if (is_empty t) then
-		()
-	else
-		let (s, s_succs) = MS.choose t in
-		let _ = Printf.printf "%s ->\n" s in
-		let _ = print_succs s_succs in
-		let t' = MS.remove s t in
-		print_table t'
+	let l = MS.bindings t in
+	print_table_aux l
 	
 let rec best_path_aux s sf t time t_min path_rev =
-	let rec best_path_succs s_succs sf t time t_min path_rev =
-		if (is_empty s_succs) then
-			raise All_done
-		else
-			let (s, d) = MS.choose s_succs in
-			let s_succs' = MS.remove s s_succs in
+	let rec best_path_succs l_succs sf t time t_min path_rev =
+		match l_succs with
+		| [] -> raise All_done
+		| (s, d)::l_succs' ->
 			let (path_rev1, time1) =
-				try best_path_succs s_succs' sf t time t_min path_rev with
+				try best_path_succs l_succs' sf t time t_min path_rev with
 					All_done -> ([], -1)
 			in
 			let (path_rev2, time2) =
 				try best_path_aux s sf t (time + d) t_min (s::path_rev) with
-					No_way -> ([], -1)
+					Not_found -> ([], -1)
 			in
 			if (time1 = -1) then
 				(path_rev2, time2)
@@ -132,12 +131,11 @@ let rec best_path_aux s sf t time t_min path_rev =
 		(* le temps pour l'atteindre time devient le temps minimal t_min *)
 		(path_rev, time)
 	else
-		let s_succs = (* on regarde dans tous les successeurs de s *)
-			try succs s t with
-				Not_found -> raise No_way
-		in
+		(* on regarde dans tous les successeurs de s *)
+		let s_succs = succs s t in (* lève l'exception Not_found s'il n'y a pas de successeur *)
+		let l_succs = MS.bindings s_succs in
 		let t' = remove_station s t in (* pour ne pas repasser par s *)
-		best_path_succs s_succs sf t' time t_min path_rev
+		best_path_succs l_succs sf t' time t_min path_rev
 
 let best_path si sf t =
 	let (path_rev, time) = best_path_aux si sf t 0 (-1) [si] in

@@ -7,11 +7,12 @@ let _ =
 		let (l, (si, sf)) = analyse_file_1 filename in
 		let t = list_to_table l in
 		let _ = print_table t in
-		let (path, time) = best_path si sf t in
-		if (time = -1) then
-			Printf.printf "No way from %s to %s\n" si sf
-			(* output_sol_1 max_int [""] *)
-		else
-			output_sol_1 time path
+		let (path, time) =
+			try best_path (si, sf) t with
+				No_way ->
+					let _ = Printf.printf "No way from %s to %s\n" si sf in
+					([si; sf], max_int)
+		in
+		output_sol_1 time path
 	else
 		Printf.printf "usage: %s filename\n" Sys.argv.(0)

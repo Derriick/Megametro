@@ -1,0 +1,12 @@
+10
+A B 7
+A I 1
+A E 6
+I B 4
+I T 3
+T B 9
+T E 3
+T Q 2
+Q B 7
+Q E 4
+B E

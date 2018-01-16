@@ -1,3 +1,7 @@
+(* @requires décrivant les pré-conditions : c'est-à-dire conditions sur les paramètres pour une bonne utilisation (pas de typage ici), *)
+(* @ensures décrivant la propriété vraie à la sortie de la fonction lorsque les pré-conditions sont respectées, le cas échéant avec mention des comportements en cas de succès et en cas d'échec, *)
+(* @raises énumérant les exceptions éventuellement levées (et précisant dans quel(s) cas elles le sont). *)
+
 type way = string * string
 type path = string list
 type path_pass = (string * int) list
@@ -10,18 +14,33 @@ exception No_way
 
 let empty = MS.empty
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let is_empty t = MS.is_empty t
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let is_present s t = MS.mem s t
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let succs s t = MS.find s t
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let add_station s t =
 	if is_present s t then
 		t
 	else
 		MS.add s empty t
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let rec remove_station_aux s1 t l =
 	match l with
 	| [] -> t
@@ -39,11 +58,17 @@ let rec remove_station_aux s1 t l =
 		in
 		remove_station_aux s1 t' l'
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let remove_station s t =
 	let t' = MS.remove s t in
 	let l = MS.bindings t' in
 	remove_station_aux s t' l
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let add_way_aux s1 s2 d t =
 	let t =
 		if not (is_present s1 t) then
@@ -58,11 +83,17 @@ let add_way_aux s1 s2 d t =
 	let s1_succs_with_s2 = MS.add s2 (d, 0) s1_succs in
 	MS.add s1 s1_succs_with_s2 t
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let add_way way d t =
 	let (s1, s2) = way in
 	let t2 = add_way_aux s1 s2 d t in
 	add_way_aux s2 s1 d t2
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let rec list_to_table_aux l acc =
 	match l with
 	| [] -> acc
@@ -71,21 +102,36 @@ let rec list_to_table_aux l acc =
 		let t = add_way w d acc in
 		list_to_table_aux l' t
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let list_to_table l =
 	list_to_table_aux l empty
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let path_to_path_pass p =
 	List.map (fun s -> (s, -1)) p
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let path_list_to_path_pass_list pl =
 	List.map (fun p -> path_to_path_pass p) pl
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let get_time s2 s1_succs =
 	let (d, _) = try MS.find s2 s1_succs with
 		Not_found -> (-1, 0)
 	in
 	d
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let get_way_time w t =
 	let (s1, s2) = w in
 	let s1_succs =
@@ -94,6 +140,9 @@ let get_way_time w t =
 	in
 	get_time s2 s1_succs
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let set_way_busy w t =
 	let (s1, s2) = w in
 	let s1_succs = succs s1 t in (* raise Not_found si la station n'existe pas *)
@@ -104,32 +153,67 @@ let set_way_busy w t =
 	let t' = MS.add s1 s1_succs' t in
 	MS.add s2 s2_succs' t'
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let get_busy_time w t =
 	let (s1, s2) = w in
 	let s1_succs = succs s1 t in (* raise Not_found si la station n'existe pas *)
 	let (_, b) = MS.find s2 s1_succs in (* raise Not_found si la station n'existe pas *)
 	b
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let is_way_busy w t =
 	let (s1, s2) = w in
 	(get_busy_time s1 s2 t) <> 0
 
-let next_way_in_path_pass pp =
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
+let rec get_next_way_in_path_pass pp =
 	match pp with
 	| [] -> assert false
-	| _::[] -> raise All_done
-	| s1::s2::pp' ->
-		(s1, s2)
+	| (s1, _)::pp' ->
+		match pp' with
+		| [] -> raise All_done
+		| (s2, t2)::_ ->
+			if (t2 = -1) then
+				(s1, s2)
+			else
+				get_next_way_in_path_pass pp'
 
+
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
+let set_next_way_in_path_pass pp time =
+	let rec aux pp1 pp2 =
+		match pp1 with
+		| [] -> ([], pp2)
+		| (s, t)::pp1' ->
+			let pp2' = (s, time)::pp2 in
+			if (t = -1) then
+				(pp1', pp2')
+			else
+				aux pp1' pp2'
+	in
+	let (pp1, pp2) = aux pp [] in
+	List.rev_append pp1 pp2
+
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let inc_time_table t =
 	MS.map (
 		fun s_succs ->
 			MS.map (
 				fun (d, b) ->
-					if (b >= 0) then
+					if (b > 0) then
 						(d, b - 1)
 					else
-						(d, b)
+						(d, 0)
 			) s_succs
 	) t
 
@@ -148,6 +232,9 @@ let get_path_pass_time pp t =
 	| (s, _)::pp' -> get_path_pass_time_aux pp' t s
 *)
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let rec get_path_pass_time pp t =
 	match pp with
 	| [] -> assert false
@@ -159,6 +246,9 @@ let rec get_path_pass_time pp t =
 			let time = get_way_time (s1, s2) t in
 			time + get_path_pass_time pp' t
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let rec print_succs l_succs =
 	match l_succs with
 	| [] -> ()
@@ -166,6 +256,9 @@ let rec print_succs l_succs =
 		let _ = Printf.printf "  \\__ %s : %d | %d\n" s d b in
 		print_succs l_succs'
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let rec print_table_aux l =
 	match l with
 	| [] -> ()
@@ -175,10 +268,16 @@ let rec print_table_aux l =
 		let _ = print_succs l_succs in
 		print_table_aux l'
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let rec print_table t =
 	let l = MS.bindings t in
 	print_table_aux l
 	
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let rec best_path_aux w t time t_min path_rev =
 	let rec best_path_succs l_succs sf t time t_min path_rev =
 		match l_succs with
@@ -214,6 +313,9 @@ let rec best_path_aux w t time t_min path_rev =
 		let t' = remove_station s t in (* pour ne pas repasser par s *)
 		best_path_succs l_succs sf t' time t_min path_rev
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let best_path w t =
 	let (s, _) = w in
 	let (path_rev, time) = best_path_aux w t 0 (-1) [s] in
@@ -222,20 +324,49 @@ let best_path w t =
 	else
 		(List.rev path_rev, time)
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let sort_path_path_list ppl t =
 	List.sort (
 			fun p1 p2 ->
 				- compare (get_path_pass_time p1 t) (get_path_pass_time p2 t)
 		) ppl
 
-let rec best_comb_path_aux ppl t =
-	match ppl with
-	| [] -> raise All_done
-	| pp::ppl' ->
-		let t_max = get_path_pass_time pp t in
-		assert false
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
+let rec best_comb_path_aux ppl t time =
+	let (ppl', t') = List.fold_left (
+			fun (ppl, t) pp ->
+				let w = get_next_way_in_path_pass pp in
+				let b = get_busy_time w t in
+				if (b = 0) then
+					(* mettre à jour temps de départ de w dans pp de ppl avec time*)
+					let ppl' = set_next_way_in_path_pass ppl time in
+					let t' = set_way_busy w t in
+					(ppl', t')
+				else
+					(ppl, t)
+		) (ppl, t) ppl
+	in
+	(* tester si tout le monde n'est pas arrivé (à partir des pp de ppl), sinon renvoyer *)
+	let t'' = inc_time_table t in
+	if (true) then (* si tout le monde n'est pas arrivé *)
+		best_comb_path_aux ppl' t'' (time + 1)
+	else
+		(ppl', time)
 
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
 let best_comb_path pl t =
 	let ppl = path_list_to_path_pass_list pl in
-	let ppl' = sort_path_path_list ppl t in
-	best_comb_path_aux ppl' t
+	let ppl_sorted = sort_path_path_list ppl t in
+	match ppl_sorted with
+	| [] -> assert false
+	| pp::_ ->
+		(* let t_max = get_path_pass_time pp t in *)
+		let (ppl', time) = best_comb_path_aux ppl_sorted t 0 in
+		(* récupérer temps max de ppl (pour chaque pp) et comparer avec t_max -> savoir si c'est optimal ou non *)
+		ppl'

@@ -6,7 +6,6 @@ let _ =
 		let filename = Sys.argv.(1) in
 		let (l, path_list) = analyse_file_2 filename in
 		let t = list_to_table l in
-		(* let _ = print_table t in *)
 		let sol_list = best_comb_path path_list t in
 		output_sol_2 sol_list
 	else

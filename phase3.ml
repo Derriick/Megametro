@@ -6,7 +6,6 @@ let _ =
 		let filename = Sys.argv.(1) in
 		let (l, way_list) = analyse_file_3 filename in
 		let t = list_to_table l in
-		(* let _ = print_table t in *)
 		let path_list = List.rev_map (
 				fun w -> let (p, _) =
 					try best_path w t with

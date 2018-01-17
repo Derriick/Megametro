@@ -5,7 +5,7 @@ APP3 = phase3
 CAMLC = ocamlc
 .PRECIOUS: %.cmi %.cmo
 
-# SRC = analyse.ml table.ml
+# SRC = analyse.mli table.mli
 SRC = $(wildcard *.mli)
 INT = $(SRC:.mli=.cmi)
 OBJ = $(SRC:.mli=.cmo)

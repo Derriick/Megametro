@@ -16,7 +16,8 @@ let _ =
 					in p
 			) way_list
 		in
-		let sol_list = best_comb_path path_list t in
-		output_sol_2 sol_list
+		let (sol_list, time) = best_comb_path path_list t in
+		let _ = output_sol_2 sol_list in
+		Printf.printf "%d\n" time
 	else
 		Printf.printf "usage: %s filename\n" Sys.argv.(0)

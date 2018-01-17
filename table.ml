@@ -354,8 +354,8 @@ let best_comb_path pl t =
 	match ppl_sorted with
 	| [] -> assert false
 	| pp::_ ->
-		let t_max = get_path_pass_time pp t in
 		let (ppl_sol, time) = best_comb_path_aux ppl_sorted t 0 in
+		(*let t_max = get_path_pass_time pp t in
 		let _ =
 			let c = compare time t_max in
 			if (c = 0) then
@@ -364,5 +364,6 @@ let best_comb_path pl t =
 				Printf.printf "Peut-être pas la solution la plus optimale (%d: temps du chemin le plus long dépassé de %d)\n" time (time - t_max)
 			else
 				Printf.printf "Légèrement impossible... (%d)\n" time
-		in
-		List.rev_map (fun pp -> list_gen pp ([], [])) ppl_sol
+		in*)
+		let list_sol = List.rev_map (fun pp -> list_gen pp ([], [])) ppl_sol in
+		(list_sol, time)

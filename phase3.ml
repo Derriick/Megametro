@@ -12,7 +12,7 @@ let _ =
 						No_way ->
 							let (si, sf) = w in
 							let _ = Printf.printf "No way from %s to %s\n" si sf in
-							([si; sf], 0)
+							raise No_way
 					in p
 			) way_list
 		in

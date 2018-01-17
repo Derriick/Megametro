@@ -129,7 +129,7 @@ let rec get_path_pass_time pp t =
 
 (* @requires les modules (s) listé dans les listes (pp) listés dans (ppl) sont contenus dans (t)
    @ensures  trie la liste (ppl) de listes (pp) en prenant (get_path_pass_time pp t) décroissant, puis avec (List.length) décroissant
-   @raises   met les listes (pp) à la fin de la liste retournée *)
+   @raises   met les listes (pp) à la fin de la liste retournée une de leur itinéraire est incompatible avec (t) *)
 let sort_path_path_list ppl t =
 	List.sort (
 			fun pp1 pp2 ->
@@ -140,9 +140,9 @@ let sort_path_path_list ppl t =
 					- c
 		) ppl
 
-(* @requires w = (s1, s2) -> t doit contenir un élément à la clé (s1), qui lui même doit contenir le couple (d, bt) à la clé (s2)
+(* @requires w = (s1, s2) -> (t) doit contenir un élément à la clé (s1), qui lui même doit contenir le couple (d, bt) à la clé (s2)
    @ensures  le temps d'attente avant que le chemin (w) entre deux modules soit libre
-   @raises   Not_found *)
+   @raises   Not_found si on ne trouve pas l'élément correspondant à (w) dans (t) *)
 let get_busy_time w t =
 	let (s1, s2) = w in
 	let s1_succs = MS.find s1 t in (* raise Not_found si la station s1 n'existe pas *)
@@ -151,7 +151,7 @@ let get_busy_time w t =
 
 (* @requires w = (s1, s2) -> t doit contenir un élément à la clé (s1), qui lui même doit contenir le couple (d, bt) à la clé (s2) (et inversement)
    @ensures  change le couple (d, bt) en (d, d + 1) dans (t) aux éléments correspondants
-   @raises   Not_found *)
+   @raises   Not_found si on ne trouve pas l'élément correspondant à (w) dans (t) *)
 let set_way_busy w t i =
 	let (s1, s2) = w in
 	let s1_succs = MS.find s1 t in (* raise Not_found si la station n'existe pas *)
@@ -164,7 +164,7 @@ let set_way_busy w t i =
 
 (* @requires (pp) est une liste non vide
    @ensures  renvoie le premier chemin (w) dont le temps de départ (time) de son module d'arrivée (s2, time) est (-1)
-   @raises   arrête le programme *)
+   @raises   arrête le programme si (pp) est vide *)
 let rec get_next_way_in_path_pass pp =
 	match pp with
 	| [] -> assert false
@@ -211,7 +211,7 @@ let inc_time_table t =
 (* @requires liste (pp) non vide
    @ensures  (true) si tous les couples (s, time) de (pp) sont tels que (time > -1)
              (false) sinon
-   @raises   arrête le programme *)
+   @raises   arrête le programme si (pp) est vide *)
 let rec is_arrived pp =
 	match pp with
 	| [] -> assert false
@@ -236,7 +236,7 @@ let rec all_arrived ppl =
              (t_imin) est le temps minimum trouvé où (-1) si un itinéraire n'a pas encore été trouvé (comme au 1er appel)
              (path_rev) est l'itinéraire suivi pour arriver jusqu'à cette étape ([] au 1er appel)
    @ensures  renvoit le 1er itinéraire trouvé possédant le temps de parcours (t_min) minimal
-   @raises   No_way *)
+   @raises   No_way si on ne trouve pas d'itinéraire dans (t) sans repasser par une station de (path_rev), ou si l'itinéraire est incompatible avec (t) *)
 let rec best_path_aux w t time t_min path_rev =
 	let (s, sf) = w in
 	if (time > t_min && t_min >= 0) then
@@ -266,7 +266,7 @@ let rec best_path_aux w t time t_min path_rev =
 
 (* @requires w = (s1, s2) -> un itinéraire existe pour aller de (s1) à (s2) à travers le réseau (qui doivent être contenus dans (t))
    @ensures  renvoit le 1er itinéraire trouvé possédant le temps de parcours minimal
-   @raises   No_way *)
+   @raises   No_way si l'itinéraire est incompatible avec (t) *)
 let best_path w t =
 	let (s, _) = w in
 	let (path_rev, time) = best_path_aux w t 0 (-1) [s] in
@@ -284,7 +284,7 @@ let best_path w t =
              (time) est égal à 0 a 1er appel
    @ensures  une liste de couples (liste de chaînes, liste d'entiers) correspondant 2 à 2 aux modules empruntés et à leur temps de départ
              (pas de temps de départ pour le module d'arrivée)
-   @raises   Not_found *)
+   @raises   Not_found si un des itinéraire (pp) de la liste (ppl) est incompatible avec (t) *)
 let rec best_comb_path_aux ppl t time =
 	let aux (ppl, t) pp =
 		let (b, w) = get_next_way_in_path_pass pp in (* raise All_done si tout est fait *)
@@ -306,8 +306,14 @@ let rec best_comb_path_aux ppl t time =
 				let pp' = set_next_way_in_path_pass pp (time + 1) in
 				let (b', w') = get_next_way_in_path_pass pp' in
 				if b' then
-					let t' = set_way_busy w' t 1 in
-					(pp'::ppl, t')
+					let bt' = get_busy_time w' t in
+					if (bt' = 0) then
+						let t' = set_way_busy w' t 1 in
+						(pp'::ppl, t')
+					else
+						let t' = set_way_busy w' t (bt') in
+						let pp'' = set_next_way_in_path_pass pp (time + bt') in
+						(pp''::ppl, t')
 				else
 					(pp'::ppl, t)
 			else
@@ -329,7 +335,7 @@ let rec best_comb_path_aux ppl t time =
 
 (* @requires (pp) liste non vide  couples (s, time)
    @ensures  retourne un couple (liste des modules de l'itinéraire, liste des temps de départ)
-   @raises   arrête le programme *)
+   @raises   arrête le programme si (pp) est vide *)
 let rec list_gen pp (acc_pp, acc_time) =
 	match pp with
 	| [] -> assert false
@@ -346,7 +352,7 @@ let rec list_gen pp (acc_pp, acc_time) =
              (t) est la table correspondant au réseau
    @ensures  une liste de couples (liste de chaînes, liste d'entiers) correspondant 2 à 2 aux modules empruntés et à leur temps de départ
              (pas de temps de départ pour le module d'arrivée)
-   @raises   Not_found *)
+   @raises   Not_found si un des itinéraire (p) de la liste (pl) est incompatible avec (t) *)
 let best_comb_path pl t =
 	let ppl = path_list_to_path_pass_list pl in
 	let ppl_sorted = sort_path_path_list ppl t in

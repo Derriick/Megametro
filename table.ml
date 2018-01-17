@@ -287,7 +287,7 @@ let best_path w t =
    @raises   Not_found si un des itinéraire (pp) de la liste (ppl) est incompatible avec (t) *)
 let rec best_comb_path_aux ppl t time =
 	let aux (ppl, t) pp =
-		let (b, w) = get_next_way_in_path_pass pp in (* raise All_done si tout est fait *)
+		let (b, w) = get_next_way_in_path_pass pp in
 		if b then
 			let bt = get_busy_time w t in
 			if (bt = 0) then
@@ -321,12 +321,7 @@ let rec best_comb_path_aux ppl t time =
 		else
 			(pp::ppl, t)
 	in
-	let (ppl, t) = List.fold_left (
-			fun (ppl, t) pp ->
-				try aux (ppl, t) pp with
-					All_done -> (ppl, t)
-		) ([], t) ppl
-	in
+	let (ppl, t) = List.fold_left aux ([], t) ppl in
 	if (all_arrived ppl) then (* si tout le monde est arrivé *)
 		(ppl, time + 1)
 	else

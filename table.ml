@@ -12,6 +12,30 @@ type table = (int * int) MS.t MS.t
 exception All_done
 exception No_way
 
+
+
+
+
+
+(*****************************************************)
+let rec print_pp pp =
+	match pp with
+	| [] -> Printf.printf "\n"
+	| (s, d)::pp' ->
+		let _ = Printf.printf "(%s, %d) " s d in
+		print_pp pp'
+
+let rec print_ppl ppl =
+	match ppl with
+	| [] -> Printf.printf "\n"
+	| pp::ppl' ->
+		let _ = print_pp pp in
+		print_ppl ppl'
+(*****************************************************)
+
+
+
+
 let empty = MS.empty
 
 (* @requires  *)
@@ -143,13 +167,13 @@ let get_way_time w t =
 (* @requires  *)
 (* @ensures   *)
 (* @raises    *)
-let set_way_busy w t =
+let set_way_busy w t i =
 	let (s1, s2) = w in
 	let s1_succs = succs s1 t in (* raise Not_found si la station n'existe pas *)
 	let s2_succs = succs s2 t in (* raise Not_found si la station n'existe pas *)
 	let d = get_time s2 s1_succs in
-	let s1_succs' = MS.add s2 (d, d) s1_succs in
-	let s2_succs' = MS.add s1 (d, d) s2_succs in
+	let s1_succs' = MS.add s2 (d, d + i) s1_succs in
+	let s2_succs' = MS.add s1 (d, d + i) s2_succs in
 	let t' = MS.add s1 s1_succs' t in
 	MS.add s2 s2_succs' t'
 
@@ -158,8 +182,8 @@ let set_way_busy w t =
 (* @raises    *)
 let get_busy_time w t =
 	let (s1, s2) = w in
-	let s1_succs = succs s1 t in (* raise Not_found si la station n'existe pas *)
-	let (_, b) = MS.find s2 s1_succs in (* raise Not_found si la station n'existe pas *)
+	let s1_succs = succs s1 t in (* raise Not_found si la station s1 n'existe pas *)
+	let (_, b) = MS.find s2 s1_succs in (* raise Not_found si la station s2 n'existe pas *)
 	b
 
 (* @requires  *)
@@ -177,13 +201,12 @@ let rec get_next_way_in_path_pass pp =
 	| [] -> assert false
 	| (s1, _)::pp' ->
 		match pp' with
-		| [] -> raise All_done
+		| [] -> (false, ("", ""))
 		| (s2, t2)::_ ->
 			if (t2 = -1) then
-				(s1, s2)
+				(true, (s1, s2))
 			else
 				get_next_way_in_path_pass pp'
-
 
 (* @requires  *)
 (* @ensures   *)
@@ -193,14 +216,13 @@ let set_next_way_in_path_pass pp time =
 		match pp1 with
 		| [] -> ([], pp2)
 		| (s, t)::pp1' ->
-			let pp2' = (s, time)::pp2 in
 			if (t = -1) then
-				(pp1', pp2')
+				(pp1', (s, time)::pp2)
 			else
-				aux pp1' pp2'
+				aux pp1' ((s, t)::pp2)
 	in
 	let (pp1, pp2) = aux pp [] in
-	List.rev_append pp1 pp2
+	List.rev_append pp2 pp1
 
 (* @requires  *)
 (* @ensures   *)
@@ -217,20 +239,26 @@ let inc_time_table t =
 			) s_succs
 	) t
 
-(*
-let rec get_path_pass_time_aux pp t s =
-	match pp with
-	| [] -> 0
-	| (s', _)::pp' ->
-		let wtime = get_way_time (s, s') t in
-		let ptime = get_path_pass_time_aux pp' t s' in
-		wtime + ptime
-
-let get_path_pass_time pp t =
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
+let rec is_arrived pp =
 	match pp with
 	| [] -> assert false
-	| (s, _)::pp' -> get_path_pass_time_aux pp' t s
-*)
+	| (_, t)::[] -> t <> -1
+	| _::pp' -> is_arrived pp'
+
+(* @requires  *)
+(* @ensures   *)
+(* @raises    *)
+let rec all_arrived ppl =
+	match ppl with
+	| [] -> true
+	| pp::ppl' ->
+		if (is_arrived pp) then
+			all_arrived ppl'
+		else
+			false
 
 (* @requires  *)
 (* @ensures   *)
@@ -329,33 +357,58 @@ let best_path w t =
 (* @raises    *)
 let sort_path_path_list ppl t =
 	List.sort (
-			fun p1 p2 ->
-				- compare (get_path_pass_time p1 t) (get_path_pass_time p2 t)
+			fun pp1 pp2 ->
+				let c = compare (get_path_pass_time pp1 t) (get_path_pass_time pp2 t) in
+				if (c = 0) then
+					- compare (List.length pp1) (List.length pp2)
+				else
+					- c
 		) ppl
 
 (* @requires  *)
 (* @ensures   *)
 (* @raises    *)
 let rec best_comb_path_aux ppl t time =
-	let (ppl', t') = List.fold_left (
-			fun (ppl, t) pp ->
-				let w = get_next_way_in_path_pass pp in
-				let b = get_busy_time w t in
-				if (b = 0) then
-					(* mettre à jour temps de départ de w dans pp de ppl avec time*)
-					let ppl' = set_next_way_in_path_pass ppl time in
-					let t' = set_way_busy w t in
-					(ppl', t')
+	let aux (ppl, t) pp =
+		let (b, w) = get_next_way_in_path_pass pp in (* raise All_done si tout est fait *)
+		if b then
+			let bt = get_busy_time w t in
+			if (bt = 0) then
+				let pp' = set_next_way_in_path_pass pp time in
+				let (b', w') = get_next_way_in_path_pass pp' in
+				if b' then
+					let bt' = get_busy_time w' t in
+					if (bt' = 0) then
+						let t' = set_way_busy w' t 0 in
+						(pp'::ppl, t')
+					else
+						(pp::ppl, t)
 				else
-					(ppl, t)
-		) (ppl, t) ppl
+					(pp::ppl, t)
+			else if (bt = 1) then
+				let pp' = set_next_way_in_path_pass pp (time + 1) in
+				let (b', w') = get_next_way_in_path_pass pp' in
+				if b' then
+					let t' = set_way_busy w' t 1 in
+					(pp'::ppl, t')
+				else
+					(pp'::ppl, t)
+			else
+				(pp::ppl, t)
+		else
+			(pp::ppl, t)
 	in
-	(* tester si tout le monde n'est pas arrivé (à partir des pp de ppl), sinon renvoyer *)
-	let t'' = inc_time_table t in
-	if (true) then (* si tout le monde n'est pas arrivé *)
-		best_comb_path_aux ppl' t'' (time + 1)
+	let (ppl, t) = List.fold_left (
+			fun (ppl, t) pp ->
+				try aux (ppl, t) pp with
+					All_done -> (ppl, t)
+		) ([], t) ppl
+	in
+	if (all_arrived ppl) then (* si tout le monde est arrivé *)
+		(ppl, time + 1)
 	else
-		(ppl', time)
+		let t = inc_time_table t in
+		best_comb_path_aux (List.rev ppl) t (time + 1)
 
 (* @requires  *)
 (* @ensures   *)
@@ -366,7 +419,91 @@ let best_comb_path pl t =
 	match ppl_sorted with
 	| [] -> assert false
 	| pp::_ ->
-		(* let t_max = get_path_pass_time pp t in *)
-		let (ppl', time) = best_comb_path_aux ppl_sorted t 0 in
-		(* récupérer temps max de ppl (pour chaque pp) et comparer avec t_max -> savoir si c'est optimal ou non *)
-		ppl'
+		let t_max = get_path_pass_time pp t in
+		let (ppl_sol, time) = best_comb_path_aux ppl_sorted t 0 in
+		let _ =
+			let c = compare time t_max in
+			if (c = 0) then
+				Printf.printf "Solution la plus optimale\n\n"
+			else if (c > 0) then
+				Printf.printf "Pas forcément la solution la plus optimale\n(on dépasse de %d le temps du chemin le plus long)\n\n" (time - t_max)
+			else
+				Printf.printf "Légèrement impossible...\n\n"
+		in
+		let rec list_gen pp (acc_pp, acc_time) =
+			match pp with
+			| [] -> assert false
+			| (s, time)::[] ->
+				(List.rev (s::acc_pp), List.rev acc_time)
+			| (s, time)::pp' ->
+				list_gen pp' (s::acc_pp, time::acc_time)
+		in
+		List.rev_map (fun pp -> list_gen pp ([], [])) ppl_sol
+
+
+
+
+
+(***********************)
+
+let test_aux ppl t time =
+	let aux (ppl, t) pp =
+		let (b, w) = get_next_way_in_path_pass pp in (* raise All_done si tout est fait *)
+		if b then
+			let bt = get_busy_time w t in
+			if (bt = 0) then
+				let pp' = set_next_way_in_path_pass pp time in
+				let (b', w') = get_next_way_in_path_pass pp' in
+				if b' then
+					let bt' = get_busy_time w' t in
+					if (bt' = 0) then
+						let t' = set_way_busy w' t 0 in
+						(pp'::ppl, t')
+					else
+						(pp::ppl, t)
+				else
+					(pp::ppl, t)
+			else if (bt = 1) then
+				let pp' = set_next_way_in_path_pass pp (time + 1) in
+				let (b', w') = get_next_way_in_path_pass pp' in
+				if b' then
+					let (s1, _) = w and (_, s2) = w' in
+					if (String.compare s1 s2 = 0) then
+						let t' = set_way_busy w' t 1 in
+						(pp'::ppl, t')
+					else
+						let t' = set_way_busy w' t 1 in
+						(pp'::ppl, t')
+				else
+					(pp'::ppl, t)
+			else
+				(pp::ppl, t)
+		else
+			(pp::ppl, t)
+	in
+	let (ppl, t) = List.fold_left (
+				let _ = Printf.printf "TIME %d:\n" time in
+				let _ = print_ppl ppl in
+			fun (ppl, t) pp ->
+				try aux (ppl, t) pp with
+					All_done -> (ppl, t)
+		) ([], t) ppl
+	in
+	(List.rev ppl, t)
+
+let test pl t =
+	let ppl = path_list_to_path_pass_list pl in
+	let ppl = sort_path_path_list ppl t in
+	let time = 0 in
+	let (ppl, t) = test_aux ppl t time in
+	
+	let t = inc_time_table t in
+	let time = time + 1 in
+	let (ppl, t) = test_aux ppl t time in
+	
+	let t = inc_time_table t in
+	let time = time + 1 in
+	let _ = test_aux ppl t time in
+
+	()
+	

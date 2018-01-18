@@ -1,0 +1,141 @@
+\documentclass[11pt, a4paper, twoside, titlepage]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper]{geometry}
+\usepackage{french}
+
+
+\geometry{hscale=0.75,vscale=0.75,centering}
+\font\titlefont=cmr12 at 21pt
+
+\begin{document}
+
+
+\title{{\titlefont Projet de programmation fonctionnelle}\\Megametro\thanks{En référence au jeu Minimetro}}
+\author{Pierre KOEBELIN}
+\date{\today} 
+\maketitle
+
+
+\begin{abstract}
+L'objectif de ce projet était de proposer un planificateur de déplacements dans une base martienne, avec pour principale contrainte le réaliser en utilisant exclusivement la partie fonctionnelle d'OCaml\ldots\\
+\\
+Une base martienne est composée de modules tous suffisamment spacieux pour contenir la totalité de la colonie. Le passage entre deux modules se fera via un système de tunnels de longueurs variables et ne permettant chacun que le passage d'une personne à la fois. Bien entendu, nous désirons que le système s'adapte à tout plan de base que nous lui soumettrons.\\
+\\
+Notre colonie s'est développée en trois étapes :
+\begin{enumerate}
+\item dans un premier temps, pour des problèmes de sécurité, notre colonie a été réduite à un seul individu,
+\item dans un second temps, le développement aidant, de nombreux individus ont peuplé notre colonie mais le système avait la simple tâche de réguler leurs déplacements.
+\item enfin, la capacité de calcul aidant, le système a permis la planification totale des déplacements.
+\end{enumerate}
+\end{abstract}
+
+
+\tableofcontents
+
+
+\newpage
+\section{Phase I}
+
+Pour cette phase, on ne doit gérer le déplacement que d'un seul individu ouhaitant aller d'un module de la station à un autre à travers le réseau de la base. L'objectif est de trouver l'itinéraire avec le temps le plus réduit.
+Pour ce faire, nous connaissons sont emplacement d'origine et celui qu'il souhaite atteindre, ainsi que le plan de la base, récupéré sous forme d'une liste de triplets indiquant le trajet entre deux modules et son temps de parcours.
+
+\subsection{Structure de données du plan de la base}
+Sachant que les tunnels reliant les modules sont à double sens, une structure capable et récupérer le temps de trajet entre deux stations s'avérait nécessaire. Elle devait également permettre à l'algorithme de recherche de rapidement trouver le temps séparant deux modules, sans avoir à parcourir l'ensemble des données jusqu'à trouver celle souhaitée.\\
+C'est pourquoi, le plan de la base était au début enregistré sous la forme d'une Map de Maps d'entiers, et dont la clé associée à un élément dans une Map est une chaîne de caractères.\\
+
+La clé d'un élément de la map principal correspond au nom d'un module. Cet élément est une sous-map dont la clé de chaque élément est le nom d'un module vers lequel on peut se rendre directement à partir du premier. Ces éléments étaient au début des entiers correspondant au temps de parcours entre ces deux modules. Cependant, à partir de la phase II, l'utilisation d'un couple d'entiers s'est avéré nécessaire, ce qui explique que l'algorithme de la phase 1 utilise cette nouvelle structure de données, mais sans s'occuper du deuxième entier du couple.
+
+\subsection{Algorithme de recherche de parcours optimal}
+Go more in detail \ldots
+
+
+\newpage
+\section{Phase II}
+
+\subsection{Structure de données des itinétaires}
+Go more in detail \ldots
+
+\subsection{Algorithme de recherche de meilleur combinaison d'itinéraires}
+Go more in detail \ldots
+
+
+\newpage
+\section{Phase III}
+
+\subsection{Algorithme}
+Go more in detail \ldots
+
+
+
+
+
+
+
+\newpage
+
+\paragraph{Paragraphs}
+A paragraph is small but 
+
+\subparagraph{Subparagraphs}
+subparagraphs are smaller! 
+
+\paragraph{Outline}
+First we start with a little example of the article class, which is an 
+important documentclass. But there would be other documentclasses like 
+book \ref{book}, report \ref{report} and letter \ref{letter} which are 
+described in Section \ref{documentclasses}. Finally, Section 
+\ref{conclusions} gives the conclusions.
+
+
+
+\section{Documentclasses} \label{documentclasses}
+
+\begin{itemize}
+\item article
+\item book 
+\item report 
+\item letter 
+\end{itemize}
+
+
+\begin{enumerate}
+\item article
+\item book 
+\item report 
+\item letter 
+\end{enumerate}
+
+\begin{description}
+\item[article\label{article}]{Article is \ldots}
+\item[book\label{book}]{The book class \ldots}
+\item[report\label{report}]{Report gives you \ldots}
+\item[letter\label{letter}]{If you want to write a letter.}
+\end{description}
+
+\section{tabular}
+No paper without a tabular!
+
+\begin{tabular}{|l|c|r|p{2cm}|}
+\hline
+first column & second column & third column & fourth column \\
+\hline 
+l stand for left & c for center & r for right & and p for predefined size \\
+\hline 
+\end{tabular} 
+
+
+\section{some math}
+Math in text is called in line math just put \$ character around 
+the math think. Like $ a^2 + b^2 = c^2 $. It looks better if you use 
+this 
+\[a^2 + b^2 = c^2\]
+
+\section{Conclusions}\label{conclusions}
+There is no longer \LaTeX{} example which was written by \cite{doe}.
+
+\begin{thebibliography}{9}
+\bibitem[Doe]{doe} \emph{First and last \LaTeX{} example.},
+John Doe 50 B.C. 
+\end{thebibliography}
+
+\end{document}

@@ -10,16 +10,17 @@
 \begin{document}
 
 
-\title{{\titlefont Projet de programmation fonctionnelle}\\Megametro\thanks{En référence au jeu Minimetro}}
+\title{{\titlefont Projet de programmation fonctionnelle}\\MegaMetro\thanks{En référence au jeu MiniMetro}}
 \author{Pierre KOEBELIN}
 \date{\today} 
 \maketitle
 
 
 \begin{abstract}
-L'objectif de ce projet était de proposer un planificateur de déplacements dans une base martienne, avec pour principale contrainte le réaliser en utilisant exclusivement la partie fonctionnelle d'OCaml\ldots\\
+
+L'objectif de ce projet était de proposer un planificateur de déplacements dans une base martienne, avec pour principale contrainte de le réaliser en utilisant exclusivement la partie fonctionnelle d'OCaml\ldots\\
 \\
-Une base martienne est composée de modules tous suffisamment spacieux pour contenir la totalité de la colonie. Le passage entre deux modules se fera via un système de tunnels de longueurs variables et ne permettant chacun que le passage d'une personne à la fois. Bien entendu, nous désirons que le système s'adapte à tout plan de base que nous lui soumettrons.\\
+Une base martienne est composée de modules tous suffisamment spacieux pour contenir la totalité de la colonie. Le passage entre deux modules se fait via un système de tunnels de longueurs variables et ne permettant chacun que le passage d'une personne à la fois. Bien entendu, nous désirons que le système s'adapte à tout plan de base que nous lui soumettons.\\
 \\
 Notre colonie s'est développée en trois étapes :
 \begin{enumerate}
@@ -27,6 +28,7 @@ Notre colonie s'est développée en trois étapes :
 \item dans un second temps, le développement aidant, de nombreux individus ont peuplé notre colonie mais le système avait la simple tâche de réguler leurs déplacements.
 \item enfin, la capacité de calcul aidant, le système a permis la planification totale des déplacements.
 \end{enumerate}
+
 \end{abstract}
 
 
@@ -36,106 +38,81 @@ Notre colonie s'est développée en trois étapes :
 \newpage
 \section{Phase I}
 
-Pour cette phase, on ne doit gérer le déplacement que d'un seul individu ouhaitant aller d'un module de la station à un autre à travers le réseau de la base. L'objectif est de trouver l'itinéraire avec le temps le plus réduit.
-Pour ce faire, nous connaissons sont emplacement d'origine et celui qu'il souhaite atteindre, ainsi que le plan de la base, récupéré sous forme d'une liste de triplets indiquant le trajet entre deux modules et son temps de parcours.
+Pour cette phase, on ne doit gérer le déplacement que d'un seul individu souhaitant aller d'un module de la station à un autre à travers le réseau de la base. L'objectif est de trouver l'itinéraire avec le temps le plus réduit.\\
+Pour ce faire, nous connaissons son emplacement d'origine et celui qu'il souhaite atteindre, ainsi que le plan de la base, récupéré sous forme d'une liste de triplets indiquant le trajet entre deux modules et son temps de parcours.\\
 
-\subsection{Structure de données du plan de la base}
+
+\subsection{Structures de données}
+
 Sachant que les tunnels reliant les modules sont à double sens, une structure capable et récupérer le temps de trajet entre deux stations s'avérait nécessaire. Elle devait également permettre à l'algorithme de recherche de rapidement trouver le temps séparant deux modules, sans avoir à parcourir l'ensemble des données jusqu'à trouver celle souhaitée.\\
-C'est pourquoi, le plan de la base était au début enregistré sous la forme d'une Map de Maps d'entiers, et dont la clé associée à un élément dans une Map est une chaîne de caractères.\\
+C'est pourquoi, le plan de la base était au début enregistré sous la forme d'une $Map$ de $Maps$ d'entiers, et dont la clé associée à un élément dans une $Map$ est une chaîne de caractères.\\
 
-La clé d'un élément de la map principal correspond au nom d'un module. Cet élément est une sous-map dont la clé de chaque élément est le nom d'un module vers lequel on peut se rendre directement à partir du premier. Ces éléments étaient au début des entiers correspondant au temps de parcours entre ces deux modules. Cependant, à partir de la phase II, l'utilisation d'un couple d'entiers s'est avéré nécessaire, ce qui explique que l'algorithme de la phase 1 utilise cette nouvelle structure de données, mais sans s'occuper du deuxième entier du couple.
+La clé d'un élément de la map principal correspond au nom d'un module. Cet élément est une sous-map dont la clé de chaque élément est le nom d'un module vers lequel on peut se rendre directement à partir du premier. Ces éléments étaient au début des entiers correspondant au temps de parcours entre ces deux modules. Cependant, à partir de la phase II, l'utilisation d'un couple d'entiers s'est avéré nécessaire, ce qui explique que l'algorithme de la phase I utilise cette nouvelle structure de données, mais sans s'occuper du deuxième entier du couple.\\
+
 
 \subsection{Algorithme de recherche de parcours optimal}
-Go more in detail \ldots
+
+Cet algorithme prend en entrée le plan de la base, la station de départ et celle d'arrivée du voyageur, inscrites dans un couple de chaînes de caractères.\\
+
+Pour trouver l'itinéraire le plus rapide, le plan de la base est considérée comme un arbre dont la racine est la station de départ. Chaque branche de l'arbre fait apparaître au maximum une fois une station. La recherche se fait en profondeur.\\
+Le premier but est d'arriver jusqu'à un noeud de l'arbre dont la clé est la station d'arrivée. Tant qu'il n'y est pas parvenu, il parcours l'ensemble des chemins. Lorsqu'il trouve un noeud correspondant à la station d'arrivée, il s'arrête et enregistre le temps de parcours comme temps minimal.\\
+Le prochain objectif est de trouver un itinéraire dont le temps de parcours est strictement inférieur à celui trouvé précédemment. Pour ce faire, on l'algorithme parcourt l'ensemble des branches qui n'ont pas encore été explorées. S'il n'est pas encore tombé sur un noeud de la station d'arrivée et que le temps de trajet dépasse le temps minimal trouvé jusqu'à présent, la recherche s'arrête dans cette branche. En revanche, s'il trouve un itinéraire entre les deux modules dont le temps est plus court que l'ancien, on l'enregistre comme nouveau temps minimal.\\
+L'action est répétée jusqu'à ce que toutes les branches de l'arbre aient été explorées.
+Si plusieurs itinéraires présentent le même temps de parcours, c'est celui trouvé en premier qui est renvoyé. Si aucun chemin n'est trouvé, il lève une exception.\\
+
+Cet algorithme permet de connaître à coup sûr l'itinéraire le plus rapide entre deux stations, puisqu'il essaye toutes les possibilités, mais le fait intelligemment en arrêtant le calcul sur un chemin lorsque le temps de trajet a dépassé le temps minimal trouvé précédemment.\\
 
 
-\newpage
 \section{Phase II}
 
-\subsection{Structure de données des itinétaires}
-Go more in detail \ldots
-
-\subsection{Algorithme de recherche de meilleur combinaison d'itinéraires}
-Go more in detail \ldots
+Lors de cette phase, on doit être capable de trouver le meilleur ordonnancement entre plusieurs itinéraires données en entrée du programme. Ce dernier devra alors afficher ces itinéraires en indiquant l'heure de départ des voyageurs dans chaque tunnel reliant un module à un autre.\\
+La principale contrainte de ce problème réside dans le fait que deux personnes ne peuvent pas se trouver dans le même tunnel en même temps, que ce soit dans un sens comme dans l'autre.\\
 
 
-\newpage
+\subsection{Structures de données}
+
+Afin de connaître l'heure de départ d'une station d'un voyageur, la structure d'un itinéraire utilisée pour le calcul est une liste de couples. Ces couples sont formés d'une chaîne de caractères permettant de stocker le nom du module, et d'un entier représentant le temps de départ correspondant. Cependant, la structure utilisée pour son affichage est un couple de listes : une pour le nom des stations et une pour les temps de départ.\\
+
+L'ensemble des itinéraires est stocké dans une liste, permettant ainsi à l'algorithme de suivre un ordre de résolution précis.\\
+
+La structure de données correspondant au plan de la base est la même que celle de la phase I. Il s'agit d'une $Map$ de $Maps$ de couples, eux-mêmes constitués de deux entiers : un représentant le temps de trajet entre deux modules, l'autre servant à stocker le temps restant avant que ce trajet soit libéré et puisse accueillir un autre usager.
+
+
+\subsection{Algorithme de recherche de meilleure combinaison d'itinéraires}
+
+La première action réalisée par l'algorithme à la réception des données est de classer la liste des itinéraires par temps de trajet décroissant, puis par nombre de modules décroissant ; le haut de la liste est donc constituée des trajets les plus longs en temps et passant par le plus de stations. Ces trajets sont considérés comme prioritaires dans la gestion des conflits, car ce sont eux qui pourront le moins s'adapter aux autres.\\
+L'algorithme lance ensuite le voyage de nos usagers virtuels, en commençant par les itinéraires les plus longs. Lorsqu'un individu s'engage dans un tunnel, le temps de départ de ce dernier est mis à jour dans la liste correspondant à son itinéraire. Dans la structure de la base, le temps de traversée d'un tunnel est attribué au temps d'attente avant d'être à nouveau disponible. Dès qu'un voyageur souhaite s'engager dans un tunnel en cours d'utilisation, il est mis en attente jusqu'à que ce soit son tour.\\
+Lorsque tous les voyageurs pouvant s'engager dans un tunnel l'ont fait, on incrémente le temps total de 1 et on décrémente tous les temps d'attente non nuls de la structure de la base.\\
+Cette procédure est répétée jusqu'à ce que tous les voyageurs soient arrivés à destination. On aura alors accès à leur heure de départ pour chaque module, ainsi qu'au temps d'arrivée global.\\
+
+L'algorithme utilisé est un algorithme glouton ; il ne donne pas forcément la solution la plus optimale mais s'en approche avec une faible utilisation des ressources. Compte tenu de la faible capacité de calcul présente à ce stade sur la base, ce type d'algorithme semble ainsi être un bon choix.\\
+Dans le but d'obtenir de meilleurs résultats, mais avec une utilisation des ressources presque identique, une amélioration a été apportée. Il a été remarqué que le plus souvent, faire attendre pendant un cycle un voyageur arrivé dans une station pour faire partir un autre pas encore arrivé et dont le trajet est plus long, est souvent plus intéressant. C'est pourquoi, si le système remarque qu'un de ses utilisateurs est dans ce cas et arrive dans un module au prochain cycle, l'autre usager est mis en attente.\\
+
+La dernière étape ayant lieu après la résolution du problème est la conversion de la structure des itinéraires, passant d'une liste de couples à un couple de listes. Cependant, un simple $List.split$ ne suffit pas, étant donné que la liste des stations comprenant $n$ stations voit sa liste de temps associée être de longueur $n-1$.\\
+
+
 \section{Phase III}
 
-\subsection{Algorithme}
-Go more in detail \ldots
+Lors de cette phase, le système doit être capable d'ordonnancer le déplacements de plusieurs individus à la fois, avec pour seules données d'entrées la plan de la base et les modules de départ et d'arrivée des différents utilisateurs.\\
 
 
+\subsection{Structures de données}
+
+Les structures de données utilisées sont les mêmes que celle employées lors de la phase II.\\
 
 
+\subsection{Algorithme de gestion des voyageurs}
+
+L'algorithme de la phase I établissant le meilleur itinéraire entre deux modules, et celui de la phase II pouvant donner un ordonnancement presque optimal de plusieurs itinéraires, ces deux algorithmes on été intégralement réutilisés pour la résolution de la phase III.\\
+Pour commencer, on lance l'algorithme de recherche de parcours optimal sur l'ensemble des couples (station de départ, station d'arrivée) donnés en entrée, dont on stocke les résultats dans une liste. On donne ensuite cette liste à l'algorithme de recherche de meilleure combinaison d'itinéraires, qui se charge de l'ordonner et d'en tirer une bonne combinaison minimisant au mieux le temps de parcours global des voyageurs.\\
+
+Cette solution comprend un algorithme (celui de la phase II) dont le résultat n'est pas toujours optimal, ce qui le rend lui-même imparfait. Cependant, même en considérant que l'algorithme utilisé donne une solution parfaite, l'utilisation du meilleur itinéraire d'un usager entre deux stations ne garantit pas que le temps obtenu par leur combinaison soit le meilleur possible, puisque la meilleure combinaison peut comprendre des parcours individuels non optimaux.\\
+Un algorithme donnant une solution optimal pour la phase III devrait par conséquent prendre en compte l'ensemble des chemins permettant à un voyageur de se rendre d'un module à un autre, ainsi que la totalité de leur combinaisons, ce qui serait extrêmement lourd en calcul.\\
 
 
+\section{Compléments}
 
-\newpage
+Des fonctions présentes dans le fichier $print.ml$ sont disponibles et permettent d'afficher les différentes structures de données utilisées dans $table.ml$, contenant l'ensemble des fonctions utilisées pour le fonctionnement des algorithmes.\\
 
-\paragraph{Paragraphs}
-A paragraph is small but 
-
-\subparagraph{Subparagraphs}
-subparagraphs are smaller! 
-
-\paragraph{Outline}
-First we start with a little example of the article class, which is an 
-important documentclass. But there would be other documentclasses like 
-book \ref{book}, report \ref{report} and letter \ref{letter} which are 
-described in Section \ref{documentclasses}. Finally, Section 
-\ref{conclusions} gives the conclusions.
-
-
-
-\section{Documentclasses} \label{documentclasses}
-
-\begin{itemize}
-\item article
-\item book 
-\item report 
-\item letter 
-\end{itemize}
-
-
-\begin{enumerate}
-\item article
-\item book 
-\item report 
-\item letter 
-\end{enumerate}
-
-\begin{description}
-\item[article\label{article}]{Article is \ldots}
-\item[book\label{book}]{The book class \ldots}
-\item[report\label{report}]{Report gives you \ldots}
-\item[letter\label{letter}]{If you want to write a letter.}
-\end{description}
-
-\section{tabular}
-No paper without a tabular!
-
-\begin{tabular}{|l|c|r|p{2cm}|}
-\hline
-first column & second column & third column & fourth column \\
-\hline 
-l stand for left & c for center & r for right & and p for predefined size \\
-\hline 
-\end{tabular} 
-
-
-\section{some math}
-Math in text is called in line math just put \$ character around 
-the math think. Like $ a^2 + b^2 = c^2 $. It looks better if you use 
-this 
-\[a^2 + b^2 = c^2\]
-
-\section{Conclusions}\label{conclusions}
-There is no longer \LaTeX{} example which was written by \cite{doe}.
-
-\begin{thebibliography}{9}
-\bibitem[Doe]{doe} \emph{First and last \LaTeX{} example.},
-John Doe 50 B.C. 
-\end{thebibliography}
 
 \end{document}
